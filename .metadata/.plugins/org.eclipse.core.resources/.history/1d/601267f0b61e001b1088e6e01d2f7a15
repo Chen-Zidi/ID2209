@@ -1,0 +1,178 @@
+/**
+* Name: FestivalModel
+* Based on the internal empty template. 
+* Author: Zidi Chen, Sihan Chen
+* Tags: 
+*/
+
+
+model FestivalModel
+
+global
+{
+	int number_of_guests<-10;
+	int number_of_stores<-3;
+	int number_of_infoCenter<-1;
+	
+	
+	init{
+		create Guests number:number_of_guests;
+		create Store number:1 {
+			sellFood <- true;	
+			
+		}
+		create Store number:1 {
+			sellDrink <- true;	
+			
+		}
+		create Store number:number_of_stores;
+		create InformationCenter number:number_of_infoCenter{
+			location <- {50, 50};
+		}
+		
+	}
+	
+}
+
+species Guests skills:[moving]
+{
+	//target store
+	point targetPoint<-nil;
+	
+	//location of information center
+	point infoCenter<-{50,50};
+	
+	int thirst<-0;
+	int hunger<-0;
+	rgb color<-#grey;
+	
+	reflex beIdle when:targetPoint = nil
+	{
+		do wander;
+	}
+	
+	reflex gotoInfoCenter when:(hunger > 70 or thirst >70) and targetPoint = nil{
+		do goto target:infoCenter;
+		ask InformationCenter at_distance 2{
+			if(myself.thirst > 70){
+				//randomly choose a bar
+				int i <- rnd(length(self.bars) - 1);
+				myself.targetPoint <- self.bars[i];
+				
+				
+			}else if(myself.hunger > 70){
+				//randomly choose a restaurant
+				int i <- rnd(length(self.restaurants) - 1);
+				myself.targetPoint <- self.restaurants[i];
+				
+			}
+			
+		}
+	}
+	
+	reflex moveToTarget when:targetPoint != nil
+	{
+		do goto target:targetPoint;
+	}
+	
+	reflex enterStore when:targetPoint != nil and location distance_to(targetPoint) < 2
+	{
+		
+		if (self.thirst > 70) {
+				self.thirst <- 0;
+			} else {
+				self.hunger <- 0;
+			}
+		targetPoint <- nil;
+		color <- #grey;
+	}
+	
+	reflex changeStatus when: thirst <= 70 and hunger <= 70 {
+			
+			thirst <- rnd(100);
+			if(thirst>70){
+				hunger<-0;
+				color<-#blue;
+				
+			}else{
+				hunger <- rnd(100);
+				if(hunger>70){
+					color<-#green;
+				}
+			}
+			
+			
+			
+	}
+	
+	aspect base{
+		draw sphere(2) color: color;
+		
+	}
+	
+}
+
+species Store 
+{
+	bool sellDrink<-nil;
+	bool sellFood<-nil;
+	
+	//randomly decide this store to sell drink or food
+	init{
+		if(sellDrink = nil and sellFood = nil){
+			sellDrink <- flip(0.5);
+			if(sellDrink = false){
+				sellFood<-true;
+			}
+		
+		}
+	}
+	
+	aspect base{
+		draw cube(8) color: (sellDrink)? #blue: #green;
+		
+	}
+	
+}
+
+
+
+species InformationCenter 
+{
+	
+	list<Store> restaurants <- nil;
+	list<Store> bars <- nil;
+	
+	init {
+		ask Store {
+			if(self.sellDrink = true){
+				myself.bars << self;
+			}else if(self.sellFood = true){
+				myself.restaurants<<self;
+				
+			}	
+		} 
+
+	}
+	
+	aspect base{
+		draw pyramid(15) color: #red;
+		
+	}
+	
+}
+
+experiment main type:gui
+{
+	output
+	{
+		display map type:opengl
+		{
+			species Guests aspect:base;
+			species Store aspect:base;
+			species InformationCenter aspect:base;
+			
+		}
+	}
+	
+}

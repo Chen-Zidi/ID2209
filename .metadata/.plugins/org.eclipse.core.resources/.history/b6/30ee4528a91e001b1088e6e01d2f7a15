@@ -1,0 +1,121 @@
+/**
+* Name: FestivalModel
+* Based on the internal empty template. 
+* Author: Zidi Chen, Sihan Chen
+* Tags: 
+*/
+
+
+model FestivalModel
+
+global
+{
+	int number_of_guests<-10;
+	int number_of_restaurant<-2;
+	int number_of_bar<-2;
+	int number_of_infoCenter<-1;
+	init{
+		create Guests number:number_of_guests;
+		create Restaurant number:number_of_restaurant;
+		create DrinkBar number:number_of_bar;
+		create InformationCenter number:number_of_infoCenter{
+			location <- {50, 50};
+		}
+		
+	}
+	
+}
+
+species Guests skills:[moving]
+{
+	point targetPoint<-nil;
+	point infoCenter<-{50,50};
+	int thirst<-rnd(100);
+	int hunger<-rnd(100);
+	
+	
+	reflex beIdle when:targetPoint = nil
+	{
+		do wander;
+	}
+	
+	reflex gotoInfoCenter when:(hunger > 50 or thirst >50) and targetPoint = nil{
+		targetPoint<- infoCenter;
+	}
+	
+	reflex moveToTarget when:targetPoint != nil
+	{
+		do goto target:targetPoint;
+	}
+	
+	reflex enterStore when:location distance_to(targetPoint) < 2
+	{
+		
+		
+	}
+	
+	aspect base{
+		draw sphere(2) color: #yellow;
+		
+	}
+	
+}
+
+species Restaurant 
+{
+	
+	aspect base{
+		draw cube(8) color: #green;
+		
+	}
+	
+}
+
+species DrinkBar 
+{
+	
+	aspect base{
+		draw cube(8) color: #blue;
+		
+	}
+	
+}
+
+species InformationCenter 
+{
+	
+	list<Restaurant> restaurants <- nil;
+	list<DrinkBar> bars <- nil;
+	
+	init {
+		ask Restaurant {
+				myself.restaurants << self;
+			} 
+			
+		ask DrinkBar{
+			myself.bars << self;
+			}
+		}
+	
+	aspect base{
+		draw pyramid(15) color: #red;
+		
+	}
+	
+}
+
+experiment main type:gui
+{
+	output
+	{
+		display map type:opengl
+		{
+			species Guests aspect:base;
+			species Restaurant aspect:base;
+			species DrinkBar aspect:base;
+			species InformationCenter aspect:base;
+			
+		}
+	}
+	
+}
