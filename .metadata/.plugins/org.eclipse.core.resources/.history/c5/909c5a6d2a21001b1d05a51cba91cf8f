@@ -76,7 +76,6 @@ species Guests skills:[moving]
 		do wander;
 	}
 	
-	//when agent is not thirsty or hungery, they go to arena to watch performance
 	reflex goToArena when:(hunger < threshold and thirst <threshold) and targetPoint = nil and location distance_to(arena) > 15
 	{
 		do goto target:arena;

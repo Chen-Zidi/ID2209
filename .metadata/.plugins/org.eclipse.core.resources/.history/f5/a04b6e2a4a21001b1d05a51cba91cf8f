@@ -1,19 +1,20 @@
 /**
-* Name: FestivalModel
+* Name: FestivalModelSmallBrain
 * Based on the internal empty template. 
 * Author: Zidi Chen, Sihan Chen
 * Tags: 
 */
 
 
-model FestivalModel
+model FestivalModelSmallBrain
 
 global
 {
-	int number_of_guests<-10;
+	int number_of_guests<-1;
 //	int number_of_stores<-3;
 	int number_of_infoCenter<-1;
-	int threshold <- 250;
+	int threshold <- 500;
+	
 	
 	
 	init{
@@ -61,9 +62,16 @@ species Guests skills:[moving]
 	
 	point arena<-{50, 50};
 	
+	
 	int thirst<-0;
 	int hunger<-0;
+	bool visitNew <- flip(0.3);
 	rgb color<-#grey;
+	
+	// if one Guest has visited a restaurant or bar, he will keep the information
+	list<Store> restaurants <- nil;
+	list<Store> bars <- nil;
+	
 	
 	
 	init{
@@ -76,18 +84,49 @@ species Guests skills:[moving]
 		do wander;
 	}
 	
-	//when agent is not thirsty or hungery, they go to arena to watch performance
 	reflex goToArena when:(hunger < threshold and thirst <threshold) and targetPoint = nil and location distance_to(arena) > 15
 	{
 		do goto target:arena;
 	}
 	
-	
+	// if the guest has already visited a center, he need not go to info center again
+	// the guest finds the store location from the memory 
+	// guest have 30% probability that he/she want to visit a new place (visitNew)
+	reflex revisitStore when: targetPoint = nil and visitNew = false and (hunger > threshold or thirst >threshold){
+		//write("I want to go to old place");
+		if(thirst>threshold and length(self.bars)>0){
+			
+				targetPoint <- self.bars[0];
+			
+		}
+		else if(hunger>threshold and length(self.restaurants)>0){
+			
+				targetPoint <- self.restaurants[0];
+			
+			
+		}
+		
+	}
 	
 	//if thirsty or hungry and do not know the stores
 	reflex gotoInfoCenter when:(hunger > threshold or thirst >threshold) and targetPoint = nil{
+		
+		
+		//write("I want to go to new place!");
 		do goto target:infoCenter;
 		
+		
+		// ask a guest near him whether the guest know the 
+		ask Guests at_distance 2{
+			if(myself.thirst > threshold and length(self.bars)>0){
+				myself.targetPoint <- self.bars[0];//get the bar location from other agent
+				myself.bars << self.bars[0];
+			}
+			else if(myself.hunger > threshold and length(self.restaurants)>0){
+				myself.targetPoint <- self.restaurants[0];//get restaurant location from other agent
+				myself.restaurants << self.restaurants[0];
+			}
+		}
 		
 		ask InformationCenter at_distance 2{
 			if(myself.thirst > threshold){
@@ -95,12 +134,18 @@ species Guests skills:[moving]
 				int i <- rnd(length(self.bars) - 1);
 				myself.targetPoint <- self.bars[i];
 				
+				// keep the information of the bar he will directly visit in future
+				myself.bars << self.bars[i];
+				
+				
 				
 			}else if(myself.hunger > threshold){
 				//randomly choose a restaurant
 				int i <- rnd(length(self.restaurants) - 1);
 				myself.targetPoint <- self.restaurants[i];
 				
+				// keep the information of the restaurants he will directly visit in future 
+				myself.restaurants << self.restaurants[i];
 				
 			}
 			
@@ -117,6 +162,7 @@ species Guests skills:[moving]
 	{
 		
 		if (self.thirst > threshold) {//if thirsty
+		
 				self.thirst <- rnd(threshold);//not thirsty any more
 			} else {//if hungry
 				self.hunger <- rnd(threshold);//not hungry any more
@@ -130,9 +176,19 @@ species Guests skills:[moving]
 			thirst <- thirst + 1;
 			hunger <- hunger + 1;
 			if(thirst > threshold){//if thirsty
+				//decide to go to a new place or not
+				//30% to go to a new place
+				visitNew <- flip(0.3);
+				//write(visitNew);
+				
 				hunger <- rnd(threshold);//reset hunger(randomly)
 				color<-#blue;
 			}else if(hunger>threshold){//if hungry
+				//decide to go to a new place or not
+				//30% to go to a new place
+				visitNew <- flip(0.3);
+				//write(visitNew);
+				
 				thirst<- rnd(threshold);//reset thirsty(randomly)
 				color <-#green;
 			}
@@ -185,9 +241,7 @@ species InformationCenter
 				
 			}	
 		}
-		write restaurants;
-		write bars; 
-
+		
 	}
 	
 	aspect base{
@@ -214,6 +268,7 @@ experiment main type:gui
 			species Store aspect:base;
 			species InformationCenter aspect:base;
 			species Arena aspect:base;
+			
 			
 		}
 	}
