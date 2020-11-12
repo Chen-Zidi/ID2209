@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Move &apos;DutchAuction.gaml&apos; to &apos;models&apos;" description="Move &apos;DutchAuction.gaml&apos; to &apos;models&apos;" destination="models" element1="DutchAuction.gaml" flags="7" id="org.eclipse.ltk.core.refactoring.move.resources" resources="1" stamp="1605209467191" updateReferences="true"/>
+</session>
