@@ -10,7 +10,7 @@ model DutchAuction
 
 global
 {
-	int number_of_auctioneer<-1;
+	
 	int number_of_participant<-10;
 	
 	
@@ -19,11 +19,38 @@ global
 		create Participant number:number_of_participant;
 		create Arena number:1
 		{
+			
 			location<-{50,50};
 		}
-		create Auctioneer number:number_of_auctioneer
+		create Arena number:1
 		{
+			
+			location<-{20,20};
+		}
+		create Arena number:1
+		{
+			
+			location<-{80,80};
+		}
+		create Auctioneer number:1
+		{
+			id<-0;
+			location<-{20,20};
+			merch<-'CD';
+		}
+		
+		create Auctioneer number:1
+		{
+			id<-3;
+			location<-{80,80};
+			merch<-'cloth';
+		}
+		
+		create Auctioneer number:1
+		{
+			id<-2;
 			location<-{50,50};
+			merch<-'painting';
 		}
 	}
 	
@@ -32,11 +59,12 @@ global
 species Auctioneer skills:[fipa]
 {
 	bool inAuction;
+	int id;
 	int lowerInterval;
 	int price;
 	int minPrice;
 	int round;
-	string merch;
+	string merch ;
 	list<Participant> participantList;
 	Participant winner <- nil;
 	bool allJoin <- false;
@@ -50,7 +78,7 @@ species Auctioneer skills:[fipa]
 		price <- rnd(500,550);
 		minPrice <- rnd(100,150);
 		lowerInterval <- int ((price-minPrice)/10);
-		merch <- 'a ticket for performance';
+		
 		round <- 0;
 		inAuction <- false;
 		
@@ -63,10 +91,14 @@ species Auctioneer skills:[fipa]
 		
 		ask Participant 
 		{
-			myself.participantList << self;
+			if(self.interestedMerch = myself.merch)
+			{
+				myself.participantList << self;
+			}
+			
 		}
 		
-		write 'Auctioneer, time '+ time + ': broadcast the auction is about to start.';
+		write 'Auctioneer'+id+', sells '+merch+', time '+ time + ': broadcast the auction is about to start.';
 		do start_conversation (to: participantList, protocol: 'no-protocol', performative: 'inform', contents: ['start auction', merch]);
 		inAuction <- true;
 	
@@ -88,14 +120,14 @@ species Auctioneer skills:[fipa]
 		{
 			allJoin <- true;
 			//write 'all join:'+pcounter;
-			write 'all participants join the auction';
+			write 'all interested participants join the auction for '+ merch;
 		}
 	}
 	
 	//broadcast the initial price
 	reflex broadcastInitialPrice when: inAuction and empty(proposes) and allJoin and winner=nil and !belowMinPrice
 	{
-		write 'Auctioneer, round ' + round +', time '+ time + ': broadcast the initial price.';
+		write 'Auctioneer'+id+', sells '+merch+', round ' + round +', time '+ time + ': broadcast the initial price.';
 		do start_conversation (to: participantList, protocol: 'fipa-contract-net', performative: 'cfp', contents: [price,round]);
 	
 	}
@@ -109,13 +141,13 @@ species Auctioneer skills:[fipa]
 			if winner=nil and !belowMinPrice{
 				list content <- list(p.contents);
 				string decision <- content[0]; 
-				write 'Auctioneer, round ' + round + ', time ' + time + ': receive from ' + agent(p.sender).name + ' ' + decision;
+				write 'Auctioneer'+id+', sells '+merch+', round ' + round + ', time ' + time + ': receive from ' + agent(p.sender).name + ' ' + decision;
 				pcounter <- pcounter + 1;
 				
 				if(decision = 'accept'){//the participant accept the price
 					inAuction <- false;
 					winner <- p.sender;//set the winner
-					write 'Auctioneer announces that winner is: ' + agent(p.sender).name;
+					write 'Auctioneer'+id+', sells '+merch+' announces that winner is: ' + agent(p.sender).name;
 				}else if(pcounter=length(participantList)){	// receive all the proposes from participants
 					round <- round + 1;
 					// propose the next price
@@ -126,7 +158,7 @@ species Auctioneer skills:[fipa]
 						write 'below minimum price, cancel the auction';
 						belowMinPrice<-true;
 					}else{
-						write 'Auctioneer, round ' + round + ', time ' + time + ': propose a new price: ' + price;
+						write 'Auctioneer'+id+', sells '+merch+', round ' + round + ', time ' + time + ': propose a new price: ' + price;
 						// inform the participants of the new price
 						do start_conversation (to: participantList, protocol: 'fipa-contract-net', performative: 'cfp', contents: [price,round]);
 					}
@@ -155,8 +187,9 @@ species Auctioneer skills:[fipa]
 
 species Participant skills:[fipa,moving]
 {
+	string interestedMerch;
 	rgb color <- #grey;
-	point arena <- {50,50};
+	point arena ;
 	point targetPoint <- nil;
 	int round <- 0;
 	int price <- 0;
@@ -165,6 +198,21 @@ species Participant skills:[fipa,moving]
 	bool joinAuction <- false;
 	
 	bool winnerFlag <- false;
+	
+	init{
+		//decide interested merch
+		int temp<-rnd(0,300);
+		if(temp <= 100){
+			interestedMerch <- "cloth";
+			arena <- {80,80};
+		}else if(temp > 100 and temp <= 200){
+			interestedMerch <- "CD";
+			arena <- {20,20};
+		}else{
+			interestedMerch <- "painting";
+			arena <- {50,50};
+		}
+	}
 	
 	//receive winner
 	reflex receiveWinnerInfo when: (!empty(informs)) and location distance_to arena < 16 and joinAuction and !winnerFlag

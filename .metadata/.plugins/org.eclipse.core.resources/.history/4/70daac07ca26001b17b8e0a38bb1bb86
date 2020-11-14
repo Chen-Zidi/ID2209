@@ -33,25 +33,19 @@ species Auctioneer skills:[fipa]
 {
 	bool inAuction;
 	int lowerInterval;
-	int price;
-	int minPrice;
-	int round;
+	int price <- 0;
 	string merch;
 	list<Participant> participantList;
 	Participant winner <- nil;
 	bool allJoin <- false;
 	int pcounter <- 0;
-	bool belowMinPrice <- false;
 	
 	bool informWinnerFlag;
 	
 	init
 	{
-		price <- rnd(500,550);
-		minPrice <- rnd(100,150);
-		lowerInterval <- int ((price-minPrice)/10);
+
 		merch <- 'a ticket for performance';
-		round <- 0;
 		inAuction <- false;
 		
 	}
@@ -92,50 +86,43 @@ species Auctioneer skills:[fipa]
 		}
 	}
 	
-	//broadcast the initial price
-	reflex broadcastInitialPrice when: inAuction and empty(proposes) and allJoin and winner=nil and !belowMinPrice
+	//ask for bids
+	reflex askForBids when: inAuction and empty(proposes) and allJoin and winner=nil 
 	{
-		write 'Auctioneer, round ' + round +', time '+ time + ': broadcast the initial price.';
-		do start_conversation (to: participantList, protocol: 'fipa-contract-net', performative: 'cfp', contents: [price,round]);
+		write "ask for bids";
+		do start_conversation (to: participantList, protocol: 'fipa-contract-net', performative: 'cfp', contents: ["please send bids"]);
 	
 	}
 	
 	//receive the feedback from the participant
-	reflex receiveFeedback when : inAuction and !(empty(proposes)) and winner = nil and allJoin and !belowMinPrice
+	reflex receiveBids when : inAuction and !(empty(proposes)) and winner = nil and allJoin
 	{
 		pcounter <- 0;
 		loop p over:proposes
 		{
-			if winner=nil and !belowMinPrice{
+			
 				list content <- list(p.contents);
-				string decision <- content[0]; 
-				write 'Auctioneer, round ' + round + ', time ' + time + ': receive from ' + agent(p.sender).name + ' ' + decision;
+				int receivedPrice <- content[0]; 
+				write 'Auctioneer' + ', time ' + time + ': receive from ' + agent(p.sender).name + ' ' + receivedPrice;
 				pcounter <- pcounter + 1;
-				
-				if(decision = 'accept'){//the participant accept the price
-					inAuction <- false;
-					winner <- p.sender;//set the winner
-					write 'Auctioneer announces that winner is: ' + agent(p.sender).name;
-				}else if(pcounter=length(participantList)){	// receive all the proposes from participants
-					round <- round + 1;
-					// propose the next price
-					price <- price - lowerInterval;
-					
-					// if below minimum price, cancel the auction
-					if(price<minPrice){
-						write 'below minimum price, cancel the auction';
-						belowMinPrice<-true;
-					}else{
-						write 'Auctioneer, round ' + round + ', time ' + time + ': propose a new price: ' + price;
-						// inform the participants of the new price
-						do start_conversation (to: participantList, protocol: 'fipa-contract-net', performative: 'cfp', contents: [price,round]);
+					if(receivedPrice > price){
+						winner <- p.sender;
+						price <- receivedPrice;
 					}
+				
+					if(pcounter = length(participantList)){
+						inAuction <- false;
+						write 'Auctioneer announces that winner is: ' + agent(p.sender).name;
 					
-				}
+					}
+				
+				
+				
+				
 			}
 			
 		}
-	}
+	
 
 	//inform all participants the winner
 	reflex informWinner when : winner!=nil and informWinnerFlag = false
@@ -158,10 +145,7 @@ species Participant skills:[fipa,moving]
 	rgb color <- #grey;
 	point arena <- {50,50};
 	point targetPoint <- nil;
-	int round <- 0;
-	int price <- 0;
-	int acceptPrice <- rnd(200,400);
-//	int acceptPrice <- rnd(0, 100);
+	int price <- rnd(300,500);
 	bool joinAuction <- false;
 	
 	bool winnerFlag <- false;
@@ -199,24 +183,14 @@ species Participant skills:[fipa,moving]
 		do goto target:targetPoint;
 	}
 	
-	//receive the price from the auctioneer
-	reflex receivePrice when: (!empty(cfps)) and location distance_to arena < 16 and joinAuction
+	//send bid to the auctioneer
+	reflex sendBid when:  location distance_to arena < 16 and joinAuction and !(empty(cfps))
 	{
-		message msg <- cfps[0];
-		list content <- list(msg.contents);
-		price <- int(content[0]);
-		round <- int(content[1]);
-		write self.name + ' round ' + round +', time '+ time + ': receive price ' + price;
-		if (price <= acceptPrice)
-		{
-			write self.name + ' round ' + round +', time '+ time + ': accept price ' + price;
-			do propose with: (message:msg, contents: ['accept', price]);
-		}
-		else
-		{
-			write self.name + ' round ' + round +', time '+ time + ': reject price ' + price;
-			do propose with: (message:msg, contents: ['reject', price]);
-		}
+		
+		
+		write self.name +', time '+ time + ': send bid ' + price;
+		do propose with: (message:cfps[0], contents: [price]);
+		
 		
 		
 	}

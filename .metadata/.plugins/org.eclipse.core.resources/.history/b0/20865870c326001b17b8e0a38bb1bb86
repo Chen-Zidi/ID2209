@@ -10,7 +10,7 @@ model DutchAuction
 
 global
 {
-	int number_of_auctioneer<-1;
+	
 	int number_of_participant<-10;
 	
 	
@@ -19,11 +19,35 @@ global
 		create Participant number:number_of_participant;
 		create Arena number:1
 		{
+			
 			location<-{50,50};
 		}
-		create Auctioneer number:number_of_auctioneer
+		create Arena number:1
+		{
+			
+			location<-{20,20};
+		}
+		create Arena number:1
+		{
+			
+			location<-{80,80};
+		}
+		create Auctioneer number:1
+		{
+			location<-{20,20};
+			merch<-'CD';
+		}
+		
+		create Auctioneer number:1
+		{
+			location<-{80,80};
+			merch<-'cloth';
+		}
+		
+		create Auctioneer number:1
 		{
 			location<-{50,50};
+			merch<-'painting';
 		}
 	}
 	
@@ -36,7 +60,7 @@ species Auctioneer skills:[fipa]
 	int price;
 	int minPrice;
 	int round;
-	string merch;
+	string merch ;
 	list<Participant> participantList;
 	Participant winner <- nil;
 	bool allJoin <- false;
@@ -50,7 +74,7 @@ species Auctioneer skills:[fipa]
 		price <- rnd(500,550);
 		minPrice <- rnd(100,150);
 		lowerInterval <- int ((price-minPrice)/10);
-		merch <- 'a ticket for performance';
+		
 		round <- 0;
 		inAuction <- false;
 		
@@ -155,6 +179,7 @@ species Auctioneer skills:[fipa]
 
 species Participant skills:[fipa,moving]
 {
+	string interestedMerch;
 	rgb color <- #grey;
 	point arena <- {50,50};
 	point targetPoint <- nil;
@@ -165,6 +190,18 @@ species Participant skills:[fipa,moving]
 	bool joinAuction <- false;
 	
 	bool winnerFlag <- false;
+	
+	init{
+		//decide interested merch
+		int temp<-rnd(0,300);
+		if(temp <= 100){
+			interestedMerch <- "cloth";
+		}else if(temp > 100 and temp <= 200){
+			interestedMerch <- "CD";
+		}else{
+			interestedMerch <- "painting";
+		}
+	}
 	
 	//receive winner
 	reflex receiveWinnerInfo when: (!empty(informs)) and location distance_to arena < 16 and joinAuction and !winnerFlag

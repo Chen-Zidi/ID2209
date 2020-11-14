@@ -10,7 +10,7 @@ model DutchAuction
 
 global
 {
-	int number_of_auctioneer<-1;
+	
 	int number_of_participant<-10;
 	
 	
@@ -19,11 +19,35 @@ global
 		create Participant number:number_of_participant;
 		create Arena number:1
 		{
+			
 			location<-{50,50};
 		}
-		create Auctioneer number:number_of_auctioneer
+		create Arena number:1
+		{
+			
+			location<-{30,30};
+		}
+		create Arena number:1
+		{
+			
+			location<-{70,70};
+		}
+		create Auctioneer number:1
+		{
+			location<-{30,30};
+			merch<-'CD';
+		}
+		
+		create Auctioneer number:1
+		{
+			location<-{70,70};
+			merch<-'cloth';
+		}
+		
+		create Auctioneer number:1
 		{
 			location<-{50,50};
+			merch<-'painting';
 		}
 	}
 	
@@ -36,7 +60,7 @@ species Auctioneer skills:[fipa]
 	int price;
 	int minPrice;
 	int round;
-	string merch;
+	string merch ;
 	list<Participant> participantList;
 	Participant winner <- nil;
 	bool allJoin <- false;
@@ -50,7 +74,7 @@ species Auctioneer skills:[fipa]
 		price <- rnd(500,550);
 		minPrice <- rnd(100,150);
 		lowerInterval <- int ((price-minPrice)/10);
-		merch <- 'a ticket for performance';
+		
 		round <- 0;
 		inAuction <- false;
 		

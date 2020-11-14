@@ -126,7 +126,7 @@ species Auctioneer skills:[fipa]
 						write 'below minimum price, cancel the auction';
 						belowMinPrice<-true;
 					}else{
-						write 'Auctioneer, round ' + round + ', time ' + time + ': propose a new price: ' + price;
+						write 'Auctioneer, round ' + round + ', time ' + time + 'propose a new price: ' + price;
 						// inform the participants of the new price
 						do start_conversation (to: participantList, protocol: 'fipa-contract-net', performative: 'cfp', contents: [price,round]);
 					}

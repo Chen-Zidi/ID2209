@@ -87,7 +87,7 @@ species Auctioneer skills:[fipa]
 		if(pcounter = length(participantList) )
 		{
 			allJoin <- true;
-			//write 'all join:'+pcounter;
+			write 'all join:'+pcounter;
 			write 'all participants join the auction';
 		}
 	}
@@ -109,7 +109,7 @@ species Auctioneer skills:[fipa]
 			if winner=nil and !belowMinPrice{
 				list content <- list(p.contents);
 				string decision <- content[0]; 
-				write 'Auctioneer, round ' + round + ', time ' + time + ': receive from ' + agent(p.sender).name + ' ' + decision;
+				write 'Auctioneer, round ' + round + ', time ' + time + ':receive from ' + agent(p.sender).name + ' ' + decision;
 				pcounter <- pcounter + 1;
 				
 				if(decision = 'accept'){//the participant accept the price
@@ -126,7 +126,7 @@ species Auctioneer skills:[fipa]
 						write 'below minimum price, cancel the auction';
 						belowMinPrice<-true;
 					}else{
-						write 'Auctioneer, round ' + round + ', time ' + time + ': propose a new price: ' + price;
+						write 'Auctioneer, round ' + round + ', time ' + time + 'propose a new price: ' + price;
 						// inform the participants of the new price
 						do start_conversation (to: participantList, protocol: 'fipa-contract-net', performative: 'cfp', contents: [price,round]);
 					}
@@ -166,40 +166,36 @@ species Participant skills:[fipa,moving]
 	
 	bool winnerFlag <- false;
 	
-	//receive winner
 	reflex receiveWinnerInfo when: (!empty(informs)) and location distance_to arena < 16 and joinAuction and !winnerFlag
 	{
 		Participant winner <- list(informs[0].contents)[0];
-		if(winner=self){//check if myself is the winner
+		if(winner=self){
 			self.color <- #black;
 			write self.name + ' knows that he is the winner';
 			winnerFlag <- true;	
 		}
 	}
 	
-	//receive the auction start message
+	
 	reflex receiveStartAuctionMsg when : (!empty(informs)) and targetPoint = nil and !joinAuction
 	{
-		targetPoint<- arena;//move to the arena
+		targetPoint<- arena;
 		write self.name + ' time: ' + time + ' receive broadcast, go to join the broadcast';
 		color <- #green;
 	}
 	
-	//when the participant arrives the area, it reports that it is ready to join the auction
 	reflex confirmAuctionStart when : location distance_to arena < 16 and (!empty(informs)) and !joinAuction
 	{
 		joinAuction <- true;
 		do inform with:(message: informs[0], contents: ['join auction from ' + agent(informs[0].sender).name, self]);
 	}
 	
-	//move to the arena
 	reflex moveToArena when: targetPoint != nil and targetPoint = {50,50} and location distance_to arena > 15
 	{
 		
 		do goto target:targetPoint;
 	}
 	
-	//receive the price from the auctioneer
 	reflex receivePrice when: (!empty(cfps)) and location distance_to arena < 16 and joinAuction
 	{
 		message msg <- cfps[0];

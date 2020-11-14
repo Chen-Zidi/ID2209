@@ -19,6 +19,8 @@ global
 		create Participant number:number_of_participant;
 		create Arena number:1
 		{
+			
+			merch <- 'CD';
 			location<-{50,50};
 		}
 		create Auctioneer number:number_of_auctioneer
@@ -50,7 +52,7 @@ species Auctioneer skills:[fipa]
 		price <- rnd(500,550);
 		minPrice <- rnd(100,150);
 		lowerInterval <- int ((price-minPrice)/10);
-		merch <- 'a ticket for performance';
+		
 		round <- 0;
 		inAuction <- false;
 		

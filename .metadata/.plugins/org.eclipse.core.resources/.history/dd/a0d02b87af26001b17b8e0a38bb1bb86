@@ -87,7 +87,7 @@ species Auctioneer skills:[fipa]
 		if(pcounter = length(participantList) )
 		{
 			allJoin <- true;
-			//write 'all join:'+pcounter;
+			write 'all join:'+pcounter;
 			write 'all participants join the auction';
 		}
 	}
@@ -109,7 +109,7 @@ species Auctioneer skills:[fipa]
 			if winner=nil and !belowMinPrice{
 				list content <- list(p.contents);
 				string decision <- content[0]; 
-				write 'Auctioneer, round ' + round + ', time ' + time + ': receive from ' + agent(p.sender).name + ' ' + decision;
+				write 'Auctioneer, round ' + round + ', time ' + time + ':receive from ' + agent(p.sender).name + ' ' + decision;
 				pcounter <- pcounter + 1;
 				
 				if(decision = 'accept'){//the participant accept the price
@@ -126,7 +126,7 @@ species Auctioneer skills:[fipa]
 						write 'below minimum price, cancel the auction';
 						belowMinPrice<-true;
 					}else{
-						write 'Auctioneer, round ' + round + ', time ' + time + ': propose a new price: ' + price;
+						write 'Auctioneer, round ' + round + ', time ' + time + 'propose a new price: ' + price;
 						// inform the participants of the new price
 						do start_conversation (to: participantList, protocol: 'fipa-contract-net', performative: 'cfp', contents: [price,round]);
 					}
