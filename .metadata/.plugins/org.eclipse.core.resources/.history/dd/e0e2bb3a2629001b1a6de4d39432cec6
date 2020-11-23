@@ -1,0 +1,164 @@
+/**
+* Name: task1
+* Based on the internal empty template. 
+* Author: czdpa
+* Tags: 
+*/
+
+
+model task1
+
+global
+{
+	
+	int number_of_queens <- 8;
+	int number_of_grids <- 8;
+	list<Queen> queenList;
+	int col <- 0;
+	init
+	{
+		create Queen number: number_of_queens
+		{
+			location <- QueenGrid[col,0].location;
+			col <- col + 1;
+			
+			//set the predecessor
+			if(length(queenList) > 0)
+			{
+				
+				self.predecessor <- queenList[length(queenList) - 1];
+				
+//				write "me"+self;
+//				write "predecessor"+self.predecessor;
+
+				//set the successor
+				queenList[length(queenList) - 1].successor <- self;
+			}
+			
+			
+			queenList << self;
+			
+		}
+		
+		
+		ask queenList[0] {
+			self.column <- 0;
+			self.row <- 0;
+			self.placed <- true;
+			do informSuccessorMyPosition();
+		}
+		
+		
+	}
+	
+}
+
+grid QueenGrid width:  number_of_grids height:  number_of_grids {
+	rgb color <- bool(((grid_x + grid_y) mod 2)) ? #black : #white;
+}
+
+species Queen skills:[fipa,moving]
+{
+	int column;
+	int row;
+	point myPlace;
+	//to identify if myself is placed
+	bool placed <- false;
+	Queen predecessor <- nil;
+	Queen successor <- nil;
+	
+	//to store the locations of grids which already have queens
+//	list<point> filledGrids;
+ 
+	matrix filledGrids <- 0 as_matrix({ number_of_grids, number_of_grids});
+	
+	action placeMyPosition
+	{
+		
+		matrix possiblePosition <- 0 as_matrix({ number_of_grids, number_of_grids});
+		write possiblePosition[0];
+		
+		//generate all positions of grids
+//		list<point> possiblePosition;
+//		list<point> notPossiblePosition;
+//		loop i from: 0 to: 3 step: 1
+//		{
+//			loop j from: 0 to: 3 step: 1
+//			{
+//				possiblePosition << {i, j};
+//			}
+//		}
+//		
+//		//remove the positions which are not available
+//		loop p over:possiblePosition
+//		{
+//			loop fg over:filledGrids
+//			{
+//				if ((fg.x = p.x) or (fg.y = p.y) or ((p.y - fg.y) = (p.x - fg.x)))
+//				{
+//					notPossiblePosition << p;
+//				}
+//					
+//			}
+//		}
+		
+//		write notPossiblePosition;
+		
+//		int temp <- rnd(0,length(possiblePosition)-1);
+//		row <- possiblePosition[temp].x;
+//		column <- possiblePosition[temp].y;
+		
+	}
+	
+	action informSuccessorMyPosition
+	{
+		filledGrids[column, row] <- 1;
+		write filledGrids;	
+		
+		do start_conversation to: [successor] protocol: 'no-protocol' performative: 'inform' contents: [column, row];
+	}
+	
+//	reflex gotoMyPosition when: row != nil and column != nil and !placed
+//	{
+//		myPlace <- QueenGrid[column,row].location;
+//		write "my grid: "+ self + " ["+row+", "+column+"]";
+//		do goto target: myPlace;
+//	}
+//	
+//	reflex reachMyPosition when: location distance_to myPlace < 0.2 and row != nil and column != nil and !placed
+//	{
+//		placed <- true;
+//		write "I arrived!";
+//	}
+	
+	reflex receivePredecessorPosition when: !(empty(informs))
+	{
+		Queen sender <- informs[0].sender;
+		ask sender
+		{	
+			//self is the sender
+			myself.filledGrids <- self.filledGrids;
+			
+		}
+		do placeMyPosition;
+	}
+	
+	aspect base
+	{
+		draw sphere(2) color: #yellow;
+	}
+}
+
+experiment main type:gui
+{
+	output
+	{
+		display map type:opengl
+		{
+			
+			species Queen aspect:base;
+			grid QueenGrid lines:#black;
+		}
+	}
+	
+}

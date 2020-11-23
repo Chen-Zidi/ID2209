@@ -57,6 +57,9 @@ species Auctioneer skills:[fipa]
 	
 	bool informWinnerFlag;
 	
+	list<Participant> giveUpList;
+	int secondPrice<-0;
+	
 	init
 	{
 		price <- rnd(40, 50);  // initial price
@@ -140,11 +143,13 @@ species Auctioneer skills:[fipa]
 //					
 //				}
 			if(decision = 'give up'){
+				giveUpList << p.sender;
 				remove agent(p.sender) from: participantList;
 			}else{ 
 				// decision = 'raise'
 				int proposedPrice <- content[1];
 				if(proposedPrice > price){
+					secondPrice <- price>secondPrice ? price:secondPrice;
 					price <- proposedPrice;
 					roundWinner<- p.sender;
 					write agent(p.sender).name + " raise the price at " + price;
@@ -152,9 +157,11 @@ species Auctioneer skills:[fipa]
 			}
 		}
 		if(length(participantList)=1){
+			Participant secondPayer <- giveUpList[length(giveUpList)-1];
 			winner <- roundWinner;
 			write "only " + winner + " remains, others all give up!";
-			write "winner is: " + winner;
+			write "winner is: " + winner + " and he should pay: " + price;
+			write "secondPayer " + secondPayer + " should also pay: " + secondPrice;
 		}
 		else if(pcounter=length(participantList)){
 			round <- round + 1;

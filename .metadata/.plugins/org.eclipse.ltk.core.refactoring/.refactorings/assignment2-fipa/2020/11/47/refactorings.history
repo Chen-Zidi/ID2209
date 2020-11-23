@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;assignment2-fipa/models/DutchAuctionMutipule.gaml&apos; to &apos;DutchAuctionMultiple.gaml&apos;" description="Rename resource &apos;DutchAuctionMutipule.gaml&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="models/DutchAuctionMutipule.gaml" name="DutchAuctionMultiple.gaml" stamp="1605481341026" updateReferences="true"/>
+</session>
