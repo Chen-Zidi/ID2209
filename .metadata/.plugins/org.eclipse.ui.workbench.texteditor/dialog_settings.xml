@@ -1,30 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item key="selection" value="write"/>
+		<item key="selection" value="game_corner"/>
 		<item key="wrap" value="true"/>
 		<item key="casesensitive" value="false"/>
 		<item key="wholeword" value="false"/>
 		<item key="incremental" value="false"/>
 		<item key="isRegEx" value="false"/>
 		<list key="findhistory">
-			<item value="write"/>
-			<item value="Agent"/>
-			<item value="agents"/>
-			<item value="getAttributes"/>
-			<item value="totalUtility"/>
-			<item value="request"/>
+			<item value="game_corner"/>
+			<item value="game_discussion"/>
+			<item value="game_disscussion"/>
+			<item value="staisification"/>
+			<item value="lover_happiness"/>
+			<item value="PUBG_lover_happiness"/>
+			<item value="happiness"/>
+			<item value="do"/>
+			<item value="status"/>
+			<item value="wander"/>
+			<item value="targetStage"/>
 			<item value="cfp"/>
-			<item value="inform"/>
-			<item value="fipa-contract-net"/>
-			<item value="protocol"/>
-			<item value="propose"/>
-			<item value="proposes"/>
-			<item value="subscribe"/>
 			<item value="cfps"/>
-			<item value="informs"/>
+			<item value="content"/>
+			<item value="do start"/>
 		</list>
 		<list key="replacehistory">
+			<item value="satisfaction"/>
 			<item value="Guest"/>
 			<item value="guests"/>
 		</list>
