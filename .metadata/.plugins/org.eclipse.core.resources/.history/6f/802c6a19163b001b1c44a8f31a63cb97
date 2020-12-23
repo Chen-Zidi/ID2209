@@ -1,0 +1,315 @@
+/**
+* Name: FestivalBdi
+* Based on the internal empty template. 
+* Author: Spycsh
+* Tags: 
+*/
+
+
+model FestivalBdi
+
+/* Insert your model definition here */
+global{
+//	predicate chill <- new_predicate("chill");
+	
+	
+	// get by name
+	string activity_at_location <- "activity_at_location";
+	predicate activity_location <- new_predicate(activity_at_location);
+	
+	predicate find_activities <- new_predicate("find activities");
+	predicate choose_activity <- new_predicate("choose activity");
+	predicate attend_activity <- new_predicate("attend activities");
+	
+//	predicate leave_current_place <- new_predicate("leave current place");
+	
+	predicate leave_place <- new_predicate("leave place");
+	
+	list<string> guestTypeList <- ['chill', 'party', 'bad children', 'PUBG lover', 'Fortnite lover'];
+	
+	list<Guest> guestList;
+	
+	init{		
+		// create guests
+		create Guest number:10{
+			self.type <- 'chill';
+			self.color <- #red;
+			guestList << self;
+		}	
+		create Guest number:10{
+			self.type <- 'party';
+			self.color <- #yellow;
+			guestList << self;
+		}
+		create Guest number:10{
+			self.type <- 'bad children';
+			self.color <- #black;
+			guestList << self;
+		}
+
+		create Guest number:10{
+			self.type <- 'PUBG lover';
+			self.color <- #green;
+			guestList << self;
+		}
+		create Guest number:10{
+			self.type <- 'Fortnite lover';
+			self.color <- #purple;
+			guestList << self;
+		}
+		
+		// create Stage
+		create Stage number: 1{
+			location <- {25,25};
+			position <- {25,25};
+			theme <- "bar";
+//			stageList << self;
+		}
+		
+		create Stage number: 1{
+			location <- {25,75};
+			position <- {25,75};
+			theme <- "game discussion corner";
+		}
+		
+		create Stage number: 1{
+			location <- {75,25};
+			position <- {75,25};
+			theme <- "film";
+		}
+		
+		create Stage number: 1{
+			location <- {75,75};
+			position <- {75,75};
+			theme <- "band";
+		}
+		
+		
+	}
+}
+
+species Guest skills:[moving, fipa] control: simple_bdi{
+	float generous;
+	float didactic;
+	float aggressive;
+	
+	float view_dist<-20;
+	
+	
+	string currentTheme;
+	
+
+	
+	rgb color;
+	
+	string type <- nil;
+	
+	point target;
+	
+	
+	
+	
+	init{
+		generous <- rnd(0,1.0);
+		didactic <- rnd(0,1.0);
+		aggressive <- rnd(0,1.0);
+		
+		// default desire is to find some activities 
+		do add_desire(find_activities);
+		
+	}
+	
+	// find a stage in some distance
+	// then remove the intention of finding activities
+	perceive target: Stage in: view_dist {
+		focus id:activity_at_location var:location;		// location of the stage 
+        ask myself {
+            do remove_intention(find_activities, false);
+        }
+    }
+	
+
+	// rules
+	// if activity location has been found, then get a new desire
+	rule belief: activity_location new_desire: attend_activity strength: 2.0;
+	
+//	rule belief: leave_current_place new_desire: leave_place strength: 10.0;
+	
+	
+	// if not compatible with others, then leave
+	plan leave_place intention: leave_place{
+		point new_target;
+		if(currentTheme="film"){
+			new_target <- {25, 25};  // go to bar
+		}else if(currentTheme="bar"){
+			new_target <- {25, 75};   // go to game corner
+		}else if(currentTheme="game discussion corner"){
+			new_target <- {75, 25};	 // go to film
+		}
+		
+		if(new_target distance_to location<=5){
+			target <- new_target;
+			// already leave the original place, remove the desire
+			do remove_desire(leave_place);
+			do wander;
+		}else{
+			do goto target: new_target;
+			
+		}
+		
+	}
+	
+	
+	// initially, just wander to find a place to have some activity
+	plan lets_wander intention: find_activities{
+		do wander;
+	}
+	
+	
+	plan attend_an_activity intention: attend_activity  {
+        if (target = nil) {
+        	// choose_gold_mine, has_gold, if the sub-intention(choose gold mine) should or not be added as well as a desire.
+            //it adds a new sub-intention to choose a stage and puts the current intention on hold
+            do add_subintention(get_current_intention(),choose_activity, true);
+            do current_intention_on_hold();
+        } else {
+        	
+            if (target distance_to location <= 5)  {
+				list<string> broadcast_content;
+				
+            	currentTheme <- getThemeByPosition(target);
+            	// the agent should broadcast his type, the target (stage) theme (bar, film, game discussion corner) and the trait value
+            	if(type = "party" and currentTheme="bar"){
+            		broadcast_content <- [type, currentTheme, self.generous];
+            	}else if(type="bad children" and currentTheme="film"){
+            		broadcast_content <- [type, currentTheme];
+            	}else if(type="PUBG lover" and currentTheme="game discussion corner"){
+            		broadcast_content <- [type, currentTheme, self.aggressive];
+            	}
+            	
+            	// only broadcast with the matched guest type and theme
+            	if(length(broadcast_content)>0){
+            		do start_conversation (to: guestList , protocol: 'no-protocol', performative: 'inform', contents: broadcast_content);
+            	}
+				
+				do wander;
+                target <- nil;
+            }else{
+            	do goto target: target;
+            }
+        }    
+    }
+    
+    string getThemeByPosition(point target){
+    	if(target={25,25}){
+    		return "bar";
+    	}else if(target={25,75}){
+    		return "game discussion corner";
+    	}else if(target={75,25}){
+    		return "film";
+    	}else{	// {75, 75}
+    		return "band";
+    	}
+    		
+    }
+
+//choose the closet activity
+	plan choose_closest_activity intention: choose_activity instantaneous:true{
+		
+		//get stage locations from belief
+        list<point> possible_activity_locations <- get_beliefs_with_name(activity_at_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+		//get the closest one
+		target <- (possible_activity_locations with_min_of (each distance_to self)).location;
+		
+		do remove_intention(choose_activity, true);
+	}
+	
+	
+	reflex receiveBroadcast when: !(empty(informs)){
+		
+		list<message> msg <- informs;
+		loop m over:msg{
+			list content <- list(m.contents);
+			string peopleType <- string(content[0]);
+//			string theme <- string(content[1]);
+			if(peopleType="bad children" and self.type="chill" and getThemeByPosition(target)="film"){	// if my theme is same as the bad children's
+				
+				//************************
+				//threshold is 0.7
+				if(self.didactic<0.7){
+					// leave
+					write "chill person leaves because he fails to teach bad children";
+					do add_desire(leave_place, 3.0);					
+				}else{
+					// stay
+					write "chill person stays with bad children.";
+					
+				}
+				// desire to leave
+			}else if(peopleType="PUBG lover" and self.type="Fortnite lover" and getThemeByPosition(target)="game discussion corner"){
+				float aggressiveFactor <- float(content[2]);
+				//************************
+				//PUBG and Fortnite lover both are aggressive, then they will fight
+				if(aggressiveFactor >= 0.7 and self.aggressive >= 0.7){
+					// leave
+//					write "Fortnite lover leaves and let PUBG lover leaves";
+					do add_desire(leave_place, 3.0);
+					// ask PUBG to leave
+					list<string> broadcast_content <- ["Fortnite lover", "conflict"];
+					do start_conversation (to: guestList , protocol: 'no-protocol', performative: 'inform', contents: broadcast_content);			
+				}else{
+					// stay
+					write "Fortnite lover stays";
+				}
+				
+			}else if(peopleType="party" and self.type="chill" and getThemeByPosition(target)="bar"){
+				float generousFactor <- float(content[2]);
+				
+				//************************
+				//threshold is 0.7
+				if(generousFactor<0.7){
+					// leave
+					write "chill person leaves because the party people is not so generous";
+					do add_desire(leave_place, 3.0);
+				}else{
+					// stay
+					write "chill person accept the party people's invitation of having a drink";
+				}
+			}else if(peopleType="Fortnite lover" and self.type="PUBG lover" and currentTheme="game discussion corner"){
+				//write "xxxxxxxxxxxxxxxxx";
+				write "PUBG lover has a fight with Fortnite, so PUBG just leave";
+				do add_desire(leave_place, 3.0);
+			}
+			
+		}
+	}
+
+	
+	aspect base{
+		draw sphere(1) color: color;
+	}
+}
+
+species Stage{
+	rgb color;
+	point position;
+	
+	string theme; // bar, film, game discussion corner
+    aspect base{
+		draw triangle(8) color: #orange;
+	}
+	
+}
+
+experiment main type: gui {
+    output {
+        display map type: opengl {
+        	
+            species Guest aspect:base;
+            species Stage aspect:base;
+        }
+		
+    }
+    
+
+}
