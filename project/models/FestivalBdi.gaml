@@ -9,7 +9,7 @@
 model FestivalBdi
 
 /* Insert your model definition here */
-global{	
+global{
 	// get by name
 	string activity_at_location <- "activity_at_location";
 	predicate activity_location <- new_predicate(activity_at_location);
@@ -136,7 +136,6 @@ species Guest skills:[moving, fipa] control: simple_bdi{
         }
     }
 	
-
 	// rules
 	// if activity location has been found, then get a new desire
 	rule belief: activity_location new_desire: attend_activity strength: 2.0;
@@ -320,7 +319,6 @@ species Guest skills:[moving, fipa] control: simple_bdi{
         } else {
         	
             if (target distance_to location <= 5)  {
-            	
 				list<string> broadcast_content;
 				
             	currentTheme <- getThemeByPosition(target);
@@ -337,7 +335,7 @@ species Guest skills:[moving, fipa] control: simple_bdi{
             	if(length(broadcast_content)>0){
             		do start_conversation (to: guestList , protocol: 'no-protocol', performative: 'inform', contents: broadcast_content);
             	}
-				
+            					
 				do wander;
                 target <- nil;
             }else{
@@ -390,56 +388,107 @@ species Guest skills:[moving, fipa] control: simple_bdi{
 		loop m over:msg{
 			list content <- list(m.contents);
 			string peopleType <- string(content[0]);
-			if(peopleType="bad children" and self.type="chill" and getThemeByPosition(target)="film" and currentTheme!="stadium"){	// if my theme is same as the bad children's
-				
-				//************************
-				//threshold is 0.7
-				if(self.didactic<0.7){
-					// leave
-					write '['+ self + ', ' + self.type + ']' + ': I am annoyed by bad children at film.';
-					do add_desire(leave_place, 3.0);
-					
-				}else{
-					// stay
-					write '['+ self + ', ' + self.type + ']' + ': I stay with bad children at film.';
-					
+			bool senderAtStage <- false;
+			
+			if(peopleType="bad children" and self.type="chill" and getThemeByPosition(target)="film" and currentTheme="film"){	// if my theme is same as the bad children's
+				ask Guest{
+					if (self =m.sender){
+						if(currentTheme = 'film' and self.location distance_to stageList[2] <= 5){
+							senderAtStage <- true;
+						}
+					}
 				}
-				// desire to leave
-			}else if(peopleType="PUBG lover" and self.type="Fortnite lover" and getThemeByPosition(target)="game discussion corner" and currentTheme!="stadium"){
+				
+				if(senderAtStage){
+					//************************
+					//threshold is 0.7
+					if(self.didactic<0.7){
+						// leave
+						write '['+ self + ', ' + self.type + ']' + ': I am annoyed by bad children at film.';
+						do add_desire(leave_place, 3.0);
+						break;
+					}else{
+						// stay
+						write '['+ self + ', ' + self.type + ']' + ': I stay with bad children at film.';
+						
+					}
+				
+				}
+				
+			}else if(peopleType="PUBG lover" and self.type="Fortnite lover" and getThemeByPosition(target)="game discussion corner" and currentTheme="game discussion corner"){
 				float aggressiveFactor <- float(content[2]);
-				//************************
-				//PUBG and Fortnite lover both are aggressive, then they will fight
-				if(aggressiveFactor >= 0.7 and self.aggressive >= 0.7){
-					// leave
-					write '['+ self + ', ' + self.type + ']' + ': I leave and let PUBG lover leave';
-					do add_desire(leave_place, 3.0);
-					// ask PUBG to leave
-					list<string> broadcast_content <- ["Fortnite lover", "conflict"];
-					do start_conversation (to: guestList , protocol: 'no-protocol', performative: 'inform', contents: broadcast_content);			
-				}else{
-					// stay
-					write "Fortnite lover and PUBG lovers play together";
-				}
 				
-			}else if(peopleType="party" and self.type="chill" and getThemeByPosition(target)="bar" and currentTheme!="stadium"){
+				ask Guest{
+					if (self =m.sender){
+						if(currentTheme = 'game discussion corner' and self.location distance_to stageList[1] <= 5){
+							
+							senderAtStage <- true;
+						}
+					}
+				}
+				if(senderAtStage){
+					//************************
+					//PUBG and Fortnite lover both are aggressive, then they will fight
+					if(aggressiveFactor >= 0.7 and self.aggressive >= 0.7){
+						// leave
+						write '['+ self + ', ' + self.type + ']' + ': I leave and let PUBG lover leave';
+						do add_desire(leave_place, 3.0);
+						// ask PUBG to leave
+						list<string> broadcast_content <- ["Fortnite lover", "conflict"];
+						do start_conversation (to: guestList , protocol: 'no-protocol', performative: 'inform', contents: broadcast_content);			
+						break;
+					}else{
+						// stay
+						write "Fortnite lover and PUBG lovers play together";
+					}
+				}
+			}else if(peopleType="party" and self.type="chill" and getThemeByPosition(target)="bar" and currentTheme="bar"){
 				float generousFactor <- float(content[2]);
 				
-				//************************
-				//threshold is 0.7
-				if(generousFactor<0.7){
-					// leave
-					write '['+ self + ', ' + self.type + ']' + ': party people is not so generous';
-					do add_desire(leave_place, 3.0);
-				}else{
-					// stay
-					write '['+ self + ', ' + self.type + ']' + ': I accept the invitation from party people';
+				ask Guest{
+					if (self =m.sender){
+						if(currentTheme = 'bar' and self.location distance_to stageList[0] <= 5){
+							
+							senderAtStage <- true;
+						}
+					}
+				}
+				
+				if(senderAtStage){
+					//************************
+					//threshold is 0.7
+					if(generousFactor<0.7){
+						// leave
+						write '['+ self + ', ' + self.type + ']' + ': party people is not so generous';
+						do add_desire(leave_place, 3.0);
+						break;
+					}else{
+						// stay
+						write '['+ self + ', ' + self.type + ']' + ': I accept the invitation from party people';
+					}
+				
 				}
 			}else if(peopleType="Fortnite lover" and self.type="PUBG lover" and currentTheme="game discussion corner"){
-				write '['+ self + ', ' + self.type + ']' + ': I leave and because there is Fortnite lovers';
-				do add_desire(leave_place, 3.0);
+				ask Guest{
+					if (self =m.sender){
+						if(currentTheme = 'game discussion corner' and self.location distance_to stageList[1] <= 5){
+							
+							senderAtStage <- true;
+						}
+					}
+				}
+				
+				if(senderAtStage){
+					write '['+ self + ', ' + self.type + ']' + ': I leave and because there is Fortnite lovers';
+					do add_desire(leave_place, 3.0);
+					break;
+					
+				}
+				
 			}
 			
 		}
+		informs <- [];
 	}
 	
 
